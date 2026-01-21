@@ -1,9 +1,57 @@
-export const login = (req, res) => {
-    res.send("Login Route")
+import User from '../models/user.model.js'
+import bcrypt from 'bcryptjs'
+
+export const signup = async (req, res) => {
+    try {
+        const { fullName, username, password, confirmPassword, gender } = req.body
+
+        if (password !== confirmPassword){
+            return res.status(400).json({error: "Passwords do not match"})
+        }
+
+        const user = await User.findOne({username})
+
+        if (user){
+            return res.status(400).json({error: "User already exists"})
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        const boyAvatar = "https://api.dicebear.com/9.x/lorelei/svg?flip=true"
+        const girlAvatar = "https://api.dicebear.com/9.x/lorelei/svg?flip=false"
+
+        const newUser = new User({
+            fullName,
+            username,
+            password: hashedPassword,
+            gender,
+            profilePic: gender === "male" ? boyAvatar : girlAvatar        
+        })
+
+        if (newUser) {
+
+        await newUser.save()
+
+        res.status(201).json({
+            _id: newUser._id,
+            fullName: newUser.fullName,
+            username: newUser.username,
+            gender: newUser.gender,
+            profilePic: newUser.profilePic
+        })
+    } else {
+        res.status(400).json({error: "Invalid user data"})
+    }
+
+    } catch (error) {
+        console.log("Error in signup controller", error.message)
+        res.status(500).json({error: error.message})
+    }
 }
 
-export const signup = (req, res) => {
-    res.send("Signup Route")
+
+export const login = (req, res) => {
+    res.send("Login Route")
 }
 
 export const logout = (req, res) => {
